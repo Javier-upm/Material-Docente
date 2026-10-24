@@ -1,0 +1,765 @@
+<title>Quiz NumPy — GITA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+/* === Design tokens: data-science aesthetic, cyan/navy === */
+:root {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface2: #e8edf4;
+  --fg: #0f172a;
+  --subtle: #64748b;
+  --accent: #0891b2;
+  --accent-glow: #06b6d4;
+  --accent-dim: #cffafe;
+  --correct: #059669;
+  --correct-bg: #d1fae5;
+  --wrong: #dc2626;
+  --wrong-bg: #fee2e2;
+  --border: #cbd5e1;
+  --code-bg: #1e293b;
+  --code-fg: #7dd3fc;
+  --radius: 12px;
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --fg: #e6edf3;
+    --subtle: #8b949e;
+    --accent: #38bdf8;
+    --accent-glow: #7dd3fc;
+    --accent-dim: #0c4a6e;
+    --correct: #34d399;
+    --correct-bg: #064e3b;
+    --wrong: #f87171;
+    --wrong-bg: #7f1d1d;
+    --border: #30363d;
+    --code-bg: #010409;
+    --code-fg: #7dd3fc;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --fg: #e6edf3;
+  --subtle: #8b949e;
+  --accent: #38bdf8;
+  --accent-glow: #7dd3fc;
+  --accent-dim: #0c4a6e;
+  --correct: #34d399;
+  --correct-bg: #064e3b;
+  --wrong: #f87171;
+  --wrong-bg: #7f1d1d;
+  --border: #30363d;
+  --code-bg: #010409;
+  --code-fg: #7dd3fc;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px;
+}
+
+/* ── Layout ── */
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.eyebrow {
+  font-family: var(--font-code);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.header h1 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--fg);
+}
+
+.header h1 span {
+  color: var(--accent);
+  font-family: var(--font-code);
+}
+
+.header p {
+  color: var(--subtle);
+  font-size: .9rem;
+  max-width: 440px;
+}
+
+/* ── QR panel (teacher view) ── */
+.qr-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.qr-panel .qr-box {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-box canvas, .qr-box img { width: 100% !important; height: 100% !important; }
+
+.qr-info { flex: 1; min-width: 180px; }
+.qr-info h3 { font-size: .95rem; font-weight: 600; margin-bottom: 4px; }
+.qr-info p { font-size: .82rem; color: var(--subtle); line-height: 1.5; }
+.qr-url {
+  margin-top: 8px;
+  font-family: var(--font-code);
+  font-size: .7rem;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 4px 8px;
+  border-radius: 6px;
+  word-break: break-all;
+  display: block;
+}
+
+/* ── Progress ── */
+.progress-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: .82rem;
+  color: var(--subtle);
+  font-weight: 500;
+}
+
+.progress-bar-bg {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Question card ── */
+.question-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.q-number {
+  font-family: var(--font-code);
+  font-size: .8rem;
+  color: var(--subtle);
+  letter-spacing: .06em;
+}
+
+.q-text {
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+
+code {
+  font-family: var(--font-code);
+  font-size: .88em;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: .95rem;
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.opt-label {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--subtle);
+  font-family: var(--font-code);
+  font-size: .78rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+
+.option.correct {
+  border-color: var(--correct);
+  background: var(--correct-bg);
+}
+
+.option.correct .opt-label {
+  background: var(--correct);
+  color: #fff;
+}
+
+.option.wrong {
+  border-color: var(--wrong);
+  background: var(--wrong-bg);
+}
+
+.option.wrong .opt-label {
+  background: var(--wrong);
+  color: #fff;
+}
+
+.option:disabled { cursor: default; }
+
+/* ── Explanation ── */
+.explanation {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  font-size: .88rem;
+  color: var(--subtle);
+  line-height: 1.65;
+}
+
+.explanation strong { color: var(--fg); }
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+button.btn {
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: opacity .15s, transform .1s;
+}
+
+button.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+button.btn:disabled { opacity: .4; cursor: default; }
+
+/* ── Score screen ── */
+.score-screen {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 5px solid var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--font-code);
+  color: var(--accent);
+}
+
+.score-screen h2 { font-size: 1.5rem; font-weight: 700; }
+.score-screen p { color: var(--subtle); max-width: 360px; font-size: .95rem; line-height: 1.6; }
+
+.grade-bar {
+  width: 100%;
+  max-width: 400px;
+  height: 10px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.grade-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+}
+
+.score-details {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.score-stat {
+  text-align: center;
+}
+
+.score-stat .val {
+  font-family: var(--font-code);
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: block;
+}
+
+.score-stat .lbl {
+  font-size: .78rem;
+  color: var(--subtle);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.score-stat.good .val { color: var(--correct); }
+.score-stat.bad .val { color: var(--wrong); }
+
+[hidden] { display: none !important; }
+</style>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="header">
+    <span class="eyebrow">GITA · Tema 6</span>
+    <h1>Quiz <span>NumPy</span></h1>
+    <p>15 preguntas sobre vectores, matrices y operaciones con NumPy. Selecciona la respuesta correcta en cada pregunta.</p>
+  </header>
+
+  <!-- Progress (hidden until quiz starts) -->
+  <div class="progress-wrap" id="progress-wrap" hidden>
+    <div class="progress-meta">
+      <span id="progress-label">Pregunta 1 de 15</span>
+      <span id="progress-score">0 correctas</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Question card -->
+  <div class="question-card" id="question-card" hidden>
+    <div class="q-number" id="q-number">Pregunta 1 / 15</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="explanation" id="explanation" hidden></div>
+    <div class="nav">
+      <button class="btn btn-primary" id="btn-next" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- Score screen -->
+  <div class="score-screen" id="score-screen" hidden>
+    <div class="score-circle" id="score-circle">0/15</div>
+    <h2 id="score-title">¡Quiz completado!</h2>
+    <p id="score-msg"></p>
+    <div class="grade-bar"><div class="grade-bar-fill" id="grade-bar" style="width:0%"></div></div>
+    <div class="score-details">
+      <div class="score-stat good"><span class="val" id="stat-correct">0</span><span class="lbl">Correctas</span></div>
+      <div class="score-stat bad"><span class="val" id="stat-wrong">0</span><span class="lbl">Incorrectas</span></div>
+      <div class="score-stat"><span class="val" id="stat-pct">0%</span><span class="lbl">Puntuación</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="restartQuiz()">Volver a empezar</button>
+  </div>
+
+  <!-- Start button (shown initially) -->
+  <div style="text-align:center" id="start-wrap">
+    <button class="btn btn-primary" onclick="startQuiz()" style="padding:14px 36px;font-size:1rem;">
+      Comenzar el quiz →
+    </button>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "¿Cuál es la forma convencional de importar NumPy en Python?",
+    opts: [
+      "import numpy",
+      "import numpy as np",
+      "from numpy import *",
+      "require numpy"
+    ],
+    correct: 1,
+    explain: "La convención establecida en la comunidad científica de Python es usar el alias <code>np</code> con <code>import numpy as np</code>. Esto evita escribir <code>numpy.</code> cada vez y es el estándar universal."
+  },
+  {
+    q: "¿Qué tipo de objeto es el elemento central de NumPy?",
+    opts: [
+      "Una lista de Python (<code>list</code>)",
+      "Un ndarray (N-dimensional array)",
+      "Un diccionario (<code>dict</code>)",
+      "Un DataFrame de pandas"
+    ],
+    correct: 1,
+    explain: "El <code>ndarray</code> (array N-dimensional) es el tipo de datos principal de NumPy. A diferencia de las listas, almacena elementos del mismo tipo y permite operaciones vectorizadas muy eficientes implementadas en C."
+  },
+  {
+    q: "¿Qué devuelve <code>np.zeros((2, 3))</code>?",
+    opts: [
+      "Un array de 2 filas y 3 columnas lleno de ceros",
+      "Un array de 2 filas y 3 columnas lleno de unos",
+      "Un array de 6 elementos aleatorios",
+      "Un error: la sintaxis correcta sería <code>np.zeros(2, 3)</code>"
+    ],
+    correct: 0,
+    explain: "<code>np.zeros(shape)</code> acepta una tupla con la forma del array y lo llena de ceros. La forma <code>(2, 3)</code> indica 2 filas y 3 columnas. Sin la tupla, <code>np.zeros(2, 3)</code> generaría un error."
+  },
+  {
+    q: "¿Cuál es el resultado de <code>np.arange(1, 10, 3)</code>?",
+    opts: [
+      "<code>[1, 4, 7, 10]</code>",
+      "<code>[1, 4, 7]</code>",
+      "<code>[3, 6, 9]</code>",
+      "<code>[1, 3, 6, 9]</code>"
+    ],
+    correct: 1,
+    explain: "<code>np.arange(start, stop, step)</code> genera valores desde <code>start</code> hasta <code>stop</code> (sin incluirlo) con el paso indicado. Así: 1, 1+3=4, 4+3=7, 7+3=10 — pero el 10 no se incluye porque el stop es exclusivo."
+  },
+  {
+    q: "Dado <code>a = np.array([10, 20, 30, 40, 50])</code>, ¿qué devuelve <code>a[1:4]</code>?",
+    opts: [
+      "<code>[10, 20, 30]</code>",
+      "<code>[20, 30, 40, 50]</code>",
+      "<code>[20, 30, 40]</code>",
+      "<code>[10, 20, 30, 40]</code>"
+    ],
+    correct: 2,
+    explain: "El slicing <code>[1:4]</code> selecciona los índices 1, 2 y 3 (el índice final es exclusivo). El índice 0 es 10, el 1 es 20, el 2 es 30, el 3 es 40 — por tanto devuelve <code>[20, 30, 40]</code>."
+  },
+  {
+    q: "¿Qué propiedad de un array devuelve su forma (número de elementos por dimensión)?",
+    opts: [
+      "<code>.size</code>",
+      "<code>.ndim</code>",
+      "<code>.dtype</code>",
+      "<code>.shape</code>"
+    ],
+    correct: 3,
+    explain: "<code>.shape</code> devuelve una tupla con el número de elementos en cada dimensión (ej: <code>(3, 4)</code> para una matriz de 3×4). <code>.size</code> da el total de elementos y <code>.ndim</code> el número de dimensiones."
+  },
+  {
+    q: "Si <code>a = np.array([1, 2, 3])</code> y <code>b = np.array([4, 5, 6])</code>, ¿qué devuelve <code>a * b</code>?",
+    opts: [
+      "<code>[4, 10, 18]</code>",
+      "<code>32</code> (producto escalar)",
+      "<code>[5, 7, 9]</code>",
+      "Error: no se pueden multiplicar arrays directamente"
+    ],
+    correct: 0,
+    explain: "En NumPy, el operador <code>*</code> realiza multiplicación <strong>elemento a elemento</strong> (element-wise): 1×4=4, 2×5=10, 3×6=18. Para el producto escalar se usa <code>np.dot(a, b)</code> o <code>a @ b</code>."
+  },
+  {
+    q: "¿Cómo se realiza la multiplicación matricial (producto matricial) en NumPy?",
+    opts: [
+      "<code>A * B</code>",
+      "<code>np.multiply(A, B)</code>",
+      "<code>np.dot(A, B)</code> o <code>A @ B</code>",
+      "<code>A.product(B)</code>"
+    ],
+    correct: 2,
+    explain: "Para la multiplicación matricial se usa <code>np.dot(A, B)</code> o el operador <code>@</code> (introducido en Python 3.5). El operador <code>*</code> y <code>np.multiply()</code> hacen producto elemento a elemento."
+  },
+  {
+    q: "¿Qué devuelve <code>np.mean(np.array([2, 4, 6, 8]))</code>?",
+    opts: [
+      "<code>20</code>",
+      "<code>5.0</code>",
+      "<code>4.0</code>",
+      "<code>4.5</code>"
+    ],
+    correct: 1,
+    explain: "La media aritmética de [2, 4, 6, 8] es (2+4+6+8)/4 = 20/4 = <strong>5.0</strong>. NumPy devuelve un float para <code>np.mean()</code>."
+  },
+  {
+    q: "¿Cómo se calcula la transpuesta de una matriz <code>A</code> en NumPy?",
+    opts: [
+      "<code>np.flip(A)</code>",
+      "<code>A.T</code> o <code>A.transpose()</code>",
+      "<code>A.swap()</code>",
+      "<code>np.invert(A)</code>"
+    ],
+    correct: 1,
+    explain: "NumPy ofrece dos formas equivalentes: el atributo <code>.T</code> y el método <code>.transpose()</code>. La transpuesta intercambia filas por columnas: una matriz (3, 4) se convierte en (4, 3)."
+  },
+  {
+    q: "Dado <code>a = np.array([1, 5, 3, 7, 2])</code>, ¿qué devuelve <code>a[a > 3]</code>?",
+    opts: [
+      "<code>[False, True, False, True, False]</code>",
+      "<code>[1, 3, 2]</code>",
+      "<code>[5, 7]</code>",
+      "Error: sintaxis inválida"
+    ],
+    correct: 2,
+    explain: "La indexación booleana en NumPy aplica la condición elemento a elemento: <code>a > 3</code> produce <code>[False, True, False, True, False]</code>. Al usar ese array como índice, se devuelven solo los elementos que cumplen la condición: <code>[5, 7]</code>."
+  },
+  {
+    q: "¿Qué crea <code>np.eye(4)</code>?",
+    opts: [
+      "Una matriz de 4×4 llena de unos",
+      "La matriz identidad de 4×4 (unos en la diagonal, ceros en el resto)",
+      "Un array de 4 elementos generados aleatoriamente",
+      "Una matriz de 4×4 con la diagonal principal a cero"
+    ],
+    correct: 1,
+    explain: "<code>np.eye(n)</code> crea la <strong>matriz identidad</strong> de n×n: tiene unos en la diagonal principal y ceros en el resto. Es fundamental en álgebra lineal (multiplicar por ella no cambia la matriz)."
+  },
+  {
+    q: "¿Qué hace <code>np.linspace(0, 10, 5)</code>?",
+    opts: [
+      "Genera 5 números entre 0 y 10 <em>sin incluir</em> el 10",
+      "Genera <code>[0.0, 2.5, 5.0, 7.5, 10.0]</code>",
+      "Genera <code>[0, 2, 4, 6, 8]</code>",
+      "Genera 5 números aleatorios entre 0 y 10"
+    ],
+    correct: 1,
+    explain: "<code>np.linspace(start, stop, num)</code> crea <code>num</code> valores <strong>igualmente espaciados</strong> entre <code>start</code> y <code>stop</code>, incluyendo <em>ambos extremos</em>. En este caso: 0, 2.5, 5, 7.5, 10."
+  },
+  {
+    q: "Dada una matriz <code>M</code> de forma <code>(3, 4)</code>, ¿qué hace <code>M.reshape(2, 6)</code>?",
+    opts: [
+      "Error: reshape cambia el número de elementos",
+      "Devuelve una nueva vista de los datos con forma <code>(2, 6)</code>",
+      "Añade filas de ceros hasta tener forma <code>(2, 6)</code>",
+      "Devuelve la transpuesta de <code>M</code>"
+    ],
+    correct: 1,
+    explain: "<code>reshape</code> funciona siempre que el número total de elementos sea igual: 3×4 = 12 = 2×6. Devuelve una vista (no copia) de los datos reorganizados en la nueva forma. Si los números no cuadran, se lanza un error."
+  },
+  {
+    q: "¿Cuál es la ventaja principal de los arrays NumPy frente a las listas de Python para cálculo numérico?",
+    opts: [
+      "No hay diferencia práctica para operaciones matemáticas",
+      "Los arrays NumPy son de tipo homogéneo y las operaciones están vectorizadas (ejecutadas en C), lo que los hace mucho más eficientes",
+      "Las listas de Python siempre son más rápidas para cualquier operación",
+      "NumPy arrays no permiten operaciones matemáticas directas"
+    ],
+    correct: 1,
+    explain: "Los arrays NumPy almacenan datos del <strong>mismo tipo</strong> en memoria contigua y las operaciones están implementadas en C/Fortran, lo que los hace 10-100× más rápidos que usar bucles Python sobre listas. Esto se llama <em>vectorización</em>."
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let answered = false;
+
+function startQuiz() {
+  document.getElementById('start-wrap').hidden = true;
+  document.getElementById('progress-wrap').hidden = false;
+  document.getElementById('question-card').hidden = false;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  answered = false;
+
+  document.getElementById('q-number').textContent = `Pregunta ${currentQ + 1} / ${QUESTIONS.length}`;
+  document.getElementById('q-text').innerHTML = q.q;
+  document.getElementById('explanation').hidden = true;
+  document.getElementById('btn-next').disabled = true;
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  const labels = ['A', 'B', 'C', 'D'];
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="opt-label">${labels[i]}</span><span>${opt}</span>`;
+    btn.addEventListener('click', () => selectOption(i));
+    opts.appendChild(btn);
+  });
+
+  // Progress
+  const pct = (currentQ / QUESTIONS.length) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `Pregunta ${currentQ + 1} de ${QUESTIONS.length}`;
+  document.getElementById('progress-score').textContent = `${score} correcta${score !== 1 ? 's' : ''}`;
+}
+
+function selectOption(chosen) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[currentQ];
+  const opts = document.querySelectorAll('.option');
+
+  opts.forEach(btn => btn.disabled = true);
+  opts[q.correct].classList.add('correct');
+  if (chosen !== q.correct) {
+    opts[chosen].classList.add('wrong');
+  } else {
+    score++;
+  }
+
+  const expEl = document.getElementById('explanation');
+  expEl.innerHTML = `<strong>${chosen === q.correct ? '✓ Correcto.' : '✗ Incorrecto.'}</strong> ${q.explain}`;
+  expEl.hidden = false;
+  document.getElementById('btn-next').disabled = false;
+
+  document.getElementById('progress-score').textContent = `${score} correcta${score !== 1 ? 's' : ''}`;
+}
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  currentQ++;
+  if (currentQ < QUESTIONS.length) {
+    renderQuestion();
+    const pct = (currentQ / QUESTIONS.length) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  } else {
+    showScore();
+  }
+});
+
+function showScore() {
+  document.getElementById('question-card').hidden = true;
+  document.getElementById('progress-wrap').hidden = true;
+  document.getElementById('score-screen').hidden = false;
+
+  const pct = Math.round((score / QUESTIONS.length) * 100);
+  document.getElementById('score-circle').textContent = `${score}/${QUESTIONS.length}`;
+  document.getElementById('stat-correct').textContent = score;
+  document.getElementById('stat-wrong').textContent = QUESTIONS.length - score;
+  document.getElementById('stat-pct').textContent = pct + '%';
+  setTimeout(() => {
+    document.getElementById('grade-bar').style.width = pct + '%';
+  }, 100);
+
+  let title, msg;
+  if (pct >= 90) {
+    title = '¡Excelente! 🎉'; msg = 'Dominas NumPy a la perfección. Estás más que preparado/a para el examen.';
+  } else if (pct >= 70) {
+    title = '¡Buen resultado!'; msg = 'Tienes una base sólida. Repasa los conceptos donde fallaste y estarás listo/a.';
+  } else if (pct >= 50) {
+    title = 'Sigue practicando'; msg = 'Vas por buen camino, pero conviene repasar más a fondo los temas. ¡Ánimo!';
+  } else {
+    title = 'Necesitas repasar'; msg = 'Te recomendamos volver a los apuntes del Tema 6 y practicar con los notebooks del curso.';
+  }
+  document.getElementById('score-title').textContent = title;
+  document.getElementById('score-msg').textContent = msg;
+}
+
+function restartQuiz() {
+  currentQ = 0;
+  score = 0;
+  document.getElementById('score-screen').hidden = true;
+  document.getElementById('progress-wrap').hidden = false;
+  document.getElementById('question-card').hidden = false;
+  renderQuestion();
+}
+
+// QR code — auto-generates from the page's own URL
+window.addEventListener('load', () => {
+  const url = window.location.href;
+  document.getElementById('qr-url-text').textContent = url;
+  new QRCode(document.getElementById('qrcode'), {
+    text: url,
+    width: 92,
+    height: 92,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+});
+</script>
