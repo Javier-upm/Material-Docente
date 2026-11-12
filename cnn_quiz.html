@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test: Redes Neuronales Convolucionales</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --primary: #1a3a5c;
+      --accent: #2e86de;
+      --correct: #27ae60;
+      --wrong: #e74c3c;
+      --muted: #6b7a8d;
+      --border: #dde3ed;
+      --radius: 10px;
+      --font: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: #1e2a38;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--primary);
+      margin-bottom: 0.4rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .quiz-container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .question-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem 1.8rem;
+      margin-bottom: 1.4rem;
+      transition: box-shadow .2s;
+    }
+
+    .question-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+
+    .q-number {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .q-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: 1.1rem;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .option-label:hover { background: #eef4ff; border-color: var(--accent); }
+
+    .option-label input[type="radio"] { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+
+    .option-label.correct { background: #eafaf1; border-color: var(--correct); }
+    .option-label.wrong   { background: #fdf0f0; border-color: var(--wrong); }
+
+    .feedback {
+      margin-top: 0.8rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .feedback.show { display: block; }
+    .feedback.correct { background: #d5f5e3; color: #1a7a44; }
+    .feedback.wrong   { background: #fde8e8; color: #a93226; }
+
+    .btn-check {
+      margin-top: 0.9rem;
+      padding: 0.5rem 1.3rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .btn-check:hover { background: #1a6cb5; }
+
+    .score-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .score-panel.visible { display: block; }
+
+    .score-number {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .score-label { color: var(--muted); margin-top: 0.3rem; }
+
+    .btn-reset {
+      margin-top: 1.2rem;
+      padding: 0.6rem 1.6rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .btn-reset:hover { background: #0f2540; }
+
+    .progress-bar-wrap {
+      background: var(--border);
+      border-radius: 20px;
+      height: 7px;
+      margin-bottom: 2rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 20px;
+      background: var(--accent);
+      width: 0%;
+      transition: width .3s;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧠 Test: Redes Neuronales Convolucionales</h1>
+  <p></p>
+</header>
+
+<div class="quiz-container">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div id="questionsContainer"></div>
+
+  <div class="score-panel" id="scorePanel">
+    <div class="score-number" id="scoreValue"></div>
+    <div class="score-label">de 10 respuestas correctas</div>
+    <div id="scoreMsg" style="margin-top:.6rem; color:#444"></div>
+    <button class="btn-reset" onclick="resetQuiz()">🔄 Volver a intentarlo</button>
+  </div>
+</div>
+
+<footer>Curso Título Propio · GeM 26-27 · Sesión 8</footer>
+
+<script>
+const questions = [
+  {
+    text: "¿Qué tipo de datos están especialmente bien tratados por las redes neuronales convolucionales (CNN)?",
+    options: [
+      "Datos tabulares sin estructura espacial",
+      "Datos estructurados en forma de rejilla, como imágenes",
+      "Secuencias temporales de texto",
+      "Grafos de conocimiento"
+    ],
+    correct: 1,
+    explanation: "Las CNN están diseñadas para procesar datos estructurados en forma de rejilla, como imágenes, donde las relaciones espaciales entre los datos son importantes."
+  },
+  {
+    text: "¿Qué operación matemática realizan las capas convolucionales para extraer características locales de la imagen?",
+    options: [
+      "Producto matricial estándar",
+      "Transformada de Fourier",
+      "Convolución mediante filtros (kernels)",
+      "Regresión logística"
+    ],
+    correct: 2,
+    explanation: "Las capas convolucionales aplican filtros o kernels mediante convoluciones para extraer características locales como bordes, texturas y patrones."
+  },
+  {
+    text: "¿Qué es un 'feature map' o mapa de características en una CNN?",
+    options: [
+      "Un diagrama que muestra la arquitectura de la red",
+      "La matriz resultado de aplicar un filtro sobre la entrada; valores altos indican la presencia del patrón detectado",
+      "Un mapa geográfico de los datos de entrenamiento",
+      "La capa de salida final de la red"
+    ],
+    correct: 1,
+    explanation: "El feature map es la matriz resultado de la operación de convolución. Los valores altos indican la presencia del patrón representado por el filtro en esa región."
+  },
+  {
+    text: "¿Qué parámetro de la convolución controla cuántos píxeles se desplaza el filtro sobre la imagen en cada paso?",
+    options: [
+      "Padding",
+      "Kernel size",
+      "Número de canales",
+      "Stride"
+    ],
+    correct: 3,
+    explanation: "El stride determina el número de píxeles que se desplaza el filtro. Un stride de 1 implica desplazarse píxel a píxel; un stride de 2 da saltos más grandes."
+  },
+  {
+    text: "¿Para qué sirve el zero-padding en la convolución?",
+    options: [
+      "Para aumentar el número de filtros en la capa",
+      "Para añadir un margen de ceros alrededor de la entrada y poder aplicar filtros incluso en los bordes",
+      "Para reducir el tamaño del kernel",
+      "Indica que no se hace padding. Es el valor por defecto"
+    ],
+    correct: 1,
+    explanation: "El zero-padding añade un margen de ceros alrededor de la matriz de entrada para que los filtros se puedan aplicar incluso en las esquinas y bordes de la imagen."
+  },
+  {
+    text: "Una entrada de <strong>36×36</strong> se convuelve con un filtro de <strong>4×4</strong>, sin padding y con <strong>stride=2</strong>. ¿Cuál es el tamaño espacial de la salida?",
+    options: [
+      "16×16",
+      "17×17",
+      "18×18",
+      "33×33"
+    ],
+    correct: 1,
+    explanation: "La fórmula con stride es H_out = ⌊(H_in − K_h) / stride⌋ + 1. Con H_in=36, K_h=4, stride=2: ⌊(36−4)/2⌋ + 1 = ⌊16⌋ + 1 = 17. Por simetría, W_out = 17. La salida es 17×17."
+  },
+  {
+    text: "¿Cuál es la función principal de las capas de pooling (max pooling o average pooling)?",
+    options: [
+      "Aumentar el número de parámetros de la red",
+      "Aplicar una función de activación no lineal",
+      "Reducir las dimensiones espaciales de los feature maps preservando la información relevante",
+      "Conectar todas las neuronas entre sí"
+    ],
+    correct: 2,
+    explanation: "Las capas de pooling reducen las dimensiones espaciales de las características extraídas por las capas convolucionales, preservando la información relevante y ayudando a evitar el sobreajuste."
+  },
+  {
+    text: "¿Qué ventaja principal ofrecen las convoluciones frente a las capas completamente conectadas en el procesamiento de imágenes?",
+    options: [
+      "Mayor número de parámetros para mayor capacidad",
+      "Menor cantidad de parámetros, ya que un mismo filtro se aplica a toda la imagen",
+      "Capacidad para procesar secuencias de texto",
+      "Eliminación de la necesidad de datos de entrenamiento"
+    ],
+    correct: 1,
+    explanation: "Un filtro se aplica a toda la imagen (compartición de pesos), lo que reduce significativamente el número de parámetros en comparación con las capas completamente conectadas."
+  },
+  {
+    text: `Una imagen de entrada tiene dimensiones <strong>32×32×3</strong>. Se aplica una capa convolucional con <strong>64 filtros de tamaño 5×5</strong>, sin padding y con stride=1.<br><br>
+<div style="display:flex;align-items:center;gap:1.2rem;margin:0.8rem 0;flex-wrap:wrap">
+  <div style="text-align:center;font-size:0.78rem;color:#555">
+    <div style="width:52px;height:72px;background:#2c2c2c;border-radius:4px;display:flex;align-items:center;justify-content:center;margin:0 auto">
+      <span style="color:#fff;font-size:1.6rem">6</span>
+    </div>
+    <div style="margin-top:4px">Input<br>32×32×3</div>
+  </div>
+  <div style="font-size:1.3rem;color:#888">→</div>
+  <div style="text-align:center;font-size:0.78rem;color:#555">
+    <div style="width:60px;height:80px;background:#e8f4f0;border:2px solid #a8d5c5;border-radius:4px;display:flex;align-items:center;justify-content:center;margin:0 auto">
+      <span style="font-size:0.7rem;font-weight:700;color:#2e7d60">Conv<br>64 filtros<br>5×5</span>
+    </div>
+    <div style="margin-top:4px">Convolucional<br>64 Filtros (5×5×3)</div>
+  </div>
+  <div style="font-size:1.3rem;color:#888">→</div>
+  <div style="text-align:center;font-size:0.78rem;color:#888;font-style:italic">
+    <div style="width:52px;height:72px;background:#f0f4f8;border:2px dashed #aab;border-radius:4px;display:flex;align-items:center;justify-content:center;margin:0 auto">
+      <span style="font-size:0.75rem;color:#99a">?</span>
+    </div>
+    <div style="margin-top:4px">Salida<br><strong>¿?×?×?</strong></div>
+  </div>
+</div>
+¿Cuál es el tamaño del tensor de salida?`,
+    options: [
+      "32×32×64",
+      "28×28×64",
+      "28×28×3",
+      "30×30×64"
+    ],
+    correct: 1,
+    explanation: "Con stride=1 y sin padding: H_out = 32−5+1 = 28, W_out = 32−5+1 = 28. El número de canales de salida es igual al número de filtros: 64. Por tanto la salida es 28×28×64."
+  },
+  {
+    text: "¿Qué aprenden los filtros de las capas iniciales frente a los de las capas finales en una CNN profunda?",
+    options: [
+      "Las capas iniciales aprenden características globales y abstractas; las finales, bordes simples",
+      "Todas las capas aprenden el mismo tipo de característica independientemente de su posición",
+      "Las capas iniciales aprenden bordes y texturas básicas; las finales, características globales y abstractas",
+      "Solo las capas finales aprenden características; las iniciales simplemente transmiten la entrada"
+    ],
+    correct: 2,
+    explanation: "Las capas iniciales detectan bordes, texturas y colores simples (kernels 3×3 o 5×5). Las capas intermedias detectan formas geométricas y texturas complejas. Las capas finales detectan características globales y abstractas como partes de objetos."
+  }
+];
+
+let answered = new Array(questions.length).fill(false);
+
+function buildQuiz() {
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML = '';
+
+  questions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `card-${qi}`;
+
+    const optionsHTML = q.options.map((opt, oi) => `
+      <label class="option-label" id="opt-${qi}-${oi}">
+        <input type="radio" name="q${qi}" value="${oi}" onchange="onSelect(${qi})">
+        <span>${opt}</span>
+      </label>`).join('');
+
+    card.innerHTML = `
+      <div class="q-number">Pregunta ${qi + 1} de ${questions.length}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">${optionsHTML}</div>
+      <button class="btn-check" onclick="checkAnswer(${qi})">Comprobar</button>
+      <div class="feedback" id="feedback-${qi}"></div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function onSelect(qi) {
+  // Enable button feedback on selection (already enabled by default)
+}
+
+function checkAnswer(qi) {
+  if (answered[qi]) return;
+
+  const selected = document.querySelector(`input[name="q${qi}"]:checked`);
+  if (!selected) {
+    alert('Por favor, selecciona una opción antes de comprobar.');
+    return;
+  }
+
+  const val = parseInt(selected.value);
+  const q = questions[qi];
+  answered[qi] = true;
+
+  // Disable all options for this question
+  document.querySelectorAll(`input[name="q${qi}"]`).forEach(inp => inp.disabled = true);
+
+  q.options.forEach((_, oi) => {
+    const lbl = document.getElementById(`opt-${qi}-${oi}`);
+    if (oi === q.correct) lbl.classList.add('correct');
+    else if (oi === val && val !== q.correct) lbl.classList.add('wrong');
+  });
+
+  const fb = document.getElementById(`feedback-${qi}`);
+  const isCorrect = val === q.correct;
+  fb.className = `feedback show ${isCorrect ? 'correct' : 'wrong'}`;
+  fb.textContent = (isCorrect ? '✅ Correcto. ' : '❌ Incorrecto. ') + q.explanation;
+
+  updateProgress();
+
+  if (answered.every(Boolean)) showScore();
+}
+
+function updateProgress() {
+  const done = answered.filter(Boolean).length;
+  document.getElementById('progressBar').style.width = `${(done / questions.length) * 100}%`;
+}
+
+function showScore() {
+  const score = questions.reduce((acc, q, qi) => {
+    const sel = document.querySelector(`input[name="q${qi}"]:checked`);
+    return acc + (sel && parseInt(sel.value) === q.correct ? 1 : 0);
+  }, 0);
+
+  const panel = document.getElementById('scorePanel');
+  document.getElementById('scoreValue').textContent = `${score} / ${questions.length}`;
+  const msgs = ['Sigue practicando 💪', 'Vas bien, repasa los conceptos 📖', '¡Muy bien! 🎉', '¡Excelente dominio del tema! 🏆'];
+  document.getElementById('scoreMsg').textContent = score <= 4 ? msgs[0] : score <= 6 ? msgs[1] : score <= 8 ? msgs[2] : msgs[3];
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetQuiz() {
+  answered = new Array(questions.length).fill(false);
+  document.getElementById('scorePanel').classList.remove('visible');
+  document.getElementById('progressBar').style.width = '0%';
+  buildQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+</script>
+</body>
+</html>
